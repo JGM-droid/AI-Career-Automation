@@ -9,12 +9,19 @@ class JobRequest(BaseModel):
     job_description: str
 
 
+class AnalysisResponse(BaseModel):
+    match_score: int
+    missing_skills: list[str]
+    recommended_projects: list[str]
+    summary: str
+
+
 @app.get("/")
 def home():
     return {"message": "AI Career Research Agent Backend Running"}
 
 
-@app.post("/analyze")
+@app.post("/analyze", response_model=AnalysisResponse)
 def analyze_job(request: JobRequest):
 
     resume_text = request.resume
@@ -36,8 +43,17 @@ def analyze_job(request: JobRequest):
     if "aws" in job_text.lower() and "aws" not in resume_text.lower():
         missing_skills.append("AWS")
 
+    recommended_projects = []
+
+    if "python" in resume_text.lower():
+        recommended_projects.append("AI Career Research Agent")
+
+    if "machine learning" in resume_text.lower():
+        recommended_projects.append("Neural Network Diabetes Classification")
+
     return {
         "match_score": score,
         "missing_skills": missing_skills,
-        "summary": f"Resume analyzed against job description."
+        "recommended_projects": recommended_projects,
+        "summary": "Resume analyzed against job description."
     }
