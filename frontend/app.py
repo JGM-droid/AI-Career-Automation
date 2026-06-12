@@ -68,9 +68,11 @@ if st.button("Analyze Job"):
                     else:
                         required_fields = {
                             "match_score",
+                            "matched_skills",
                             "missing_skills",
                             "recommended_projects",
                             "summary",
+                            "interview_topics",
                         }
 
                         if not isinstance(analysis, dict) or not required_fields.issubset(
@@ -80,6 +82,13 @@ if st.button("Analyze Job"):
                         else:
                             st.subheader("Analysis Results")
                             st.metric("Match Score", analysis["match_score"])
+
+                            st.write("**Matched Skills**")
+                            if analysis["matched_skills"]:
+                                for skill in analysis["matched_skills"]:
+                                    st.write(f"- {skill}")
+                            else:
+                                st.write("No matching skills detected yet.")
 
                             st.write("**Missing Skills**")
                             if analysis["missing_skills"]:
@@ -97,3 +106,10 @@ if st.button("Analyze Job"):
 
                             st.write("**Summary**")
                             st.write(analysis["summary"])
+
+                            st.write("**Interview Topics**")
+                            if analysis["interview_topics"]:
+                                for topic in analysis["interview_topics"]:
+                                    st.write(f"- {topic}")
+                            else:
+                                st.write("No interview topics identified yet.")
