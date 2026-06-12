@@ -45,8 +45,6 @@ if st.button("Analyze Job"):
                     json=request_data,
                     timeout=10,
                 )
-                response.raise_for_status()
-                analysis = response.json()
             except requests.exceptions.ConnectionError:
                 st.error(
                     "Could not connect to the backend. Make sure FastAPI is "
@@ -56,25 +54,46 @@ if st.button("Analyze Job"):
                 st.error("The backend took too long to respond. Please try again.")
             except requests.exceptions.RequestException as error:
                 st.error(f"The analysis request failed: {error}")
-            except (ValueError, KeyError, TypeError):
-                st.error("The backend returned an invalid response.")
             else:
-                st.subheader("Analysis Results")
-                st.metric("Match Score", analysis["match_score"])
-
-                st.write("**Missing Skills**")
-                if analysis["missing_skills"]:
-                    for skill in analysis["missing_skills"]:
-                        st.write(f"- {skill}")
+                if response.status_code != 200:
+                    st.error(
+                        "The backend returned an error "
+                        f"(HTTP {response.status_code})."
+                    )
                 else:
-                    st.write("No missing skills identified.")
+                    try:
+                        analysis = response.json()
+                    except ValueError:
+                        st.error("The backend returned invalid JSON.")
+                    else:
+                        required_fields = {
+                            "match_score",
+                            "missing_skills",
+                            "recommended_projects",
+                            "summary",
+                        }
 
-                st.write("**Recommended Projects**")
-                if analysis["recommended_projects"]:
-                    for project in analysis["recommended_projects"]:
-                        st.write(f"- {project}")
-                else:
-                    st.write("No projects recommended.")
+                        if not isinstance(analysis, dict) or not required_fields.issubset(
+                            analysis
+                        ):
+                            st.error("The backend response is missing required fields.")
+                        else:
+                            st.subheader("Analysis Results")
+                            st.metric("Match Score", analysis["match_score"])
 
-                st.write("**Summary**")
-                st.write(analysis["summary"])
+                            st.write("**Missing Skills**")
+                            if analysis["missing_skills"]:
+                                for skill in analysis["missing_skills"]:
+                                    st.write(f"- {skill}")
+                            else:
+                                st.write("No missing skills detected.")
+
+                            st.write("**Recommended Projects**")
+                            if analysis["recommended_projects"]:
+                                for project in analysis["recommended_projects"]:
+                                    st.write(f"- {project}")
+                            else:
+                                st.write("No project recommendations yet.")
+
+                            st.write("**Summary**")
+                            st.write(analysis["summary"])
